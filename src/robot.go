@@ -24,15 +24,18 @@ var (
 
 func main() {
 	fmt.Print("请输入token值(通过空格隔开):--->")
-	fmt.Scanln(&token)
-	handers := utils.EnumWindowsByTitle("CocosCreator | sqzz - Google Chrome")
-	for _, value := range handers {
-		handle = int(utils.GetWindow(value, utils.GW_CHILD))
+	fmt.Scanln(&token, &handle)
+	if handle == 0 {
+		handers := utils.EnumWindowsByTitle("CocosCreator | sqzz - Google Chrome")
+		for _, value := range handers {
+			handle = int(utils.GetWindow(value, utils.GW_CHILD))
+		}
 	}
 	fmt.Println("句柄:%v token:%v", handle, token)
 	song := make(map[string]interface{})
 	song["token"] = token
 	var data []map[string]string
+	//死循环轮询 服务端
 	for {
 		request := sendPostRequest(url, song)
 		if len(request) > 2 {
@@ -50,15 +53,20 @@ func main() {
 					} else {
 						mouseClick(uintptr(x), uintptr(y), delay)
 					}
-
 				}
 			} else {
 				fmt.Println("error", err)
 			}
+		} else {
+			time.Sleep(time.Duration(1) * time.Second)
 		}
 	}
 }
 
+/**
+	模拟鼠标点击
+    通过发送消息事件到指定的窗口,实现的该功能
+*/
 func mouseClick(x uintptr, y uintptr, delay float64) {
 	//延迟delay
 	time.Sleep(time.Duration(delay) * time.Second)
@@ -74,6 +82,10 @@ func dragMouseMove(x uintptr, y uintptr, x1 uintptr, y1 uintptr, delay float64) 
 	SendMessage(handle, 514, 0, x1+y1*65536) //左键弹起
 }
 
+/**
+发送request请求到指定的url
+发送格式为post
+*/
 func sendPostRequest(url string, song map[string]interface{}) string {
 	bytesData, err := json.Marshal(song)
 	if err != nil {
@@ -108,6 +120,9 @@ func sendGetRequest(url string) {
 
 }
 
+/**
+发送消息到指定的窗体
+*/
 func SendMessage(hwnd int, msg uint32, wParam, lParam uintptr) uintptr {
 	ret, _, _ := procSendMessage.Call(
 		uintptr(hwnd),
